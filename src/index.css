@@ -1,0 +1,94 @@
+:root {
+  color-scheme: dark;
+
+  --page: #05060e;
+  --page-elevated: #0a0c18;
+  --surface-1: #10121e;
+  --surface-2: rgba(255, 255, 255, 0.035);
+  --text-primary: #f4f5fa;
+  --text-secondary: #a6a9c4;
+  --muted: #767a99;
+  --gridline: rgba(148, 138, 255, 0.09);
+  --baseline: rgba(148, 138, 255, 0.2);
+  --border: rgba(139, 124, 255, 0.16);
+  --border-strong: rgba(148, 138, 255, 0.32);
+  --series-1: #8b7bff;
+  --accent-1: #6366f1;
+  --accent-2: #a855f7;
+  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  --accent-gradient-soft: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(168, 85, 247, 0.16));
+  --good: #34d399;
+  --good-bg: rgba(52, 211, 153, 0.12);
+  --critical: #fb7185;
+  --critical-bg: rgba(251, 113, 133, 0.12);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 12px 32px rgba(4, 3, 20, 0.45);
+  --shadow-glow: 0 8px 20px rgba(99, 102, 241, 0.22);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 15px/1.5 var(--sans);
+  color: var(--text-primary);
+  background: var(--page);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --page: #f4f5fb;
+  --page-elevated: #ffffff;
+  --surface-1: #ffffff;
+  --surface-2: rgba(99, 102, 241, 0.045);
+  --text-primary: #14151f;
+  --text-secondary: #53566b;
+  --muted: #82859e;
+  --gridline: rgba(20, 21, 31, 0.08);
+  --baseline: rgba(20, 21, 31, 0.16);
+  --border: rgba(99, 102, 241, 0.18);
+  --border-strong: rgba(99, 102, 241, 0.34);
+  --series-1: #6366f1;
+  --accent-1: #6366f1;
+  --accent-2: #a855f7;
+  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  --accent-gradient-soft: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+  --good: #16a34a;
+  --good-bg: rgba(22, 163, 74, 0.1);
+  --critical: #e11d48;
+  --critical-bg: rgba(225, 29, 72, 0.1);
+  --shadow-sm: 0 1px 2px rgba(20, 21, 31, 0.06);
+  --shadow-md: 0 12px 28px rgba(20, 21, 31, 0.08);
+  --shadow-glow: 0 8px 20px rgba(99, 102, 241, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  transition: background-color 0.2s ease;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--sans);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+::selection {
+  background: rgba(139, 124, 255, 0.3);
+}
