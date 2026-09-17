@@ -7,9 +7,33 @@ import { DistributionChart } from "./components/DistributionChart";
 import { DataTable } from "./components/DataTable";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { MarketIcon } from "./components/icons";
+import { Tabs, type TabItem } from "./components/Tabs";
+import { WeeklyAnalysis } from "./components/WeeklyAnalysis";
+import { MonthlyAnalysis } from "./components/MonthlyAnalysis";
+import { ConditionalProbabilityTab } from "./components/ConditionalProbabilityTab";
 import { simulateNifty } from "./simulation/simulateNifty";
+import { aggregateWeeklyData, aggregateMonthlyData } from "./simulation/aggregate";
+import {
+  DEFAULT_SCENARIOS,
+  calculateConditionalProbability,
+  runMultipleSimulations,
+} from "./simulation/conditionalProbability";
 import type { SimulationParams } from "./simulation/types";
-import { validateInputs, hasErrors, type RawInputs } from "./simulation/validation";
+import {
+  validateInputs,
+  hasErrors,
+  validateScenarioCount,
+  type RawInputs,
+} from "./simulation/validation";
+
+type AppTab = "daily" | "weekly" | "monthly" | "conditional";
+
+const TABS: TabItem<AppTab>[] = [
+  { id: "daily", label: "Daily" },
+  { id: "weekly", label: "Weekly" },
+  { id: "monthly", label: "Monthly" },
+  { id: "conditional", label: "Conditional Probability" },
+];
 
 const DEFAULT_INPUTS: RawInputs = {
   startPrice: "25000",
@@ -30,6 +54,7 @@ function toParams(raw: RawInputs): SimulationParams {
 }
 
 function App() {
+  const [activeTab, setActiveTab] = useState<AppTab>("daily");
   const [rawInputs, setRawInputs] = useState<RawInputs>(DEFAULT_INPUTS);
   const [appliedParams, setAppliedParams] = useState<SimulationParams>(
     toParams(DEFAULT_INPUTS)
@@ -61,6 +86,77 @@ function App() {
   };
 
   const result = useMemo(() => simulateNifty(appliedParams), [appliedParams]);
+  const weeklyPeriods = useMemo(() => aggregateWeeklyData(result.days), [result.days]);
+  const monthlyPeriods = useMemo(() => aggregateMonthlyData(result.days), [result.days]);
+
+  // --- Multi-scenario data, shared by Weekly/Monthly Return Distribution and
+  // Conditional Probability so scenarios are generated exactly once (see
+  // simulation/conditionalProbability.ts). Computed lazily: never touched
+  // while only the Daily tab has been used, so Daily stays exactly as fast
+  // as before regardless of scenario count / number of days chosen.
+  const [scenarioRaw, setScenarioRaw] = useState(String(DEFAULT_SCENARIOS));
+  const [appliedScenarioCount, setAppliedScenarioCount] = useState(DEFAULT_SCENARIOS);
+  const scenarioDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const scenarioError = validateScenarioCount(scenarioRaw);
+  const isScenarioValid = !scenarioError;
+
+  useEffect(() => {
+    if (!isScenarioValid) return;
+    if (scenarioDebounceRef.current) clearTimeout(scenarioDebounceRef.current);
+    scenarioDebounceRef.current = setTimeout(() => {
+      setAppliedScenarioCount(Math.trunc(Number(scenarioRaw)));
+    }, 400);
+    return () => {
+      if (scenarioDebounceRef.current) clearTimeout(scenarioDebounceRef.current);
+    };
+  }, [scenarioRaw, isScenarioValid]);
+
+  const handleRunScenarios = () => {
+    if (!isScenarioValid) return;
+    if (scenarioDebounceRef.current) clearTimeout(scenarioDebounceRef.current);
+    setAppliedScenarioCount(Math.trunc(Number(scenarioRaw)));
+  };
+
+  const [hasRequestedScenarios, setHasRequestedScenarios] = useState(false);
+  if (activeTab !== "daily" && !hasRequestedScenarios) {
+    setHasRequestedScenarios(true);
+  }
+
+  const scenarioData = useMemo(() => {
+    if (!hasRequestedScenarios) return null;
+    return runMultipleSimulations(appliedParams, appliedScenarioCount);
+  }, [hasRequestedScenarios, appliedParams, appliedScenarioCount]);
+
+  const weeklyScenarioReturns = useMemo(
+    () =>
+      scenarioData
+        ? scenarioData.weeklyPeriodsByScenario.flatMap((periods) =>
+            periods.map((p) => p.returnPercent)
+          )
+        : [],
+    [scenarioData]
+  );
+  const monthlyScenarioReturns = useMemo(
+    () =>
+      scenarioData
+        ? scenarioData.monthlyPeriodsByScenario.flatMap((periods) =>
+            periods.map((p) => p.returnPercent)
+          )
+        : [],
+    [scenarioData]
+  );
+
+  const weeklyConditionalResult = useMemo(
+    () => calculateConditionalProbability(scenarioData?.weeklyPeriodsByScenario ?? []),
+    [scenarioData]
+  );
+  const monthlyConditionalResult = useMemo(
+    () => calculateConditionalProbability(scenarioData?.monthlyPeriodsByScenario ?? []),
+    [scenarioData]
+  );
+
+  const goToScenarioConfig = () => setActiveTab("conditional");
 
   return (
     <div className="app">
@@ -80,6 +176,8 @@ function App() {
       </header>
 
       <main className="app-main">
+        <Tabs tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+
         <InputPanel
           values={rawInputs}
           errors={errors}
@@ -87,15 +185,49 @@ function App() {
           onRun={handleRun}
         />
 
-        <div className="results">
-          <SummaryCards summary={result.summary} />
-          <PriceChart days={result.days} />
-          <DistributionChart
-            meanDailyChangePercent={appliedParams.meanDailyChangePercent}
-            dailyChangePercent={appliedParams.dailyChangePercent}
+        {activeTab === "daily" && (
+          <div className="results">
+            <SummaryCards summary={result.summary} />
+            <PriceChart days={result.days} />
+            <DistributionChart
+              meanDailyChangePercent={appliedParams.meanDailyChangePercent}
+              dailyChangePercent={appliedParams.dailyChangePercent}
+            />
+            <DataTable days={result.days} />
+          </div>
+        )}
+
+        {activeTab === "weekly" && (
+          <WeeklyAnalysis
+            periods={weeklyPeriods}
+            scenarioReturns={weeklyScenarioReturns}
+            scenarioCount={appliedScenarioCount}
+            baseSeed={appliedParams.seed}
+            onConfigureScenarios={goToScenarioConfig}
           />
-          <DataTable days={result.days} />
-        </div>
+        )}
+
+        {activeTab === "monthly" && (
+          <MonthlyAnalysis
+            periods={monthlyPeriods}
+            scenarioReturns={monthlyScenarioReturns}
+            scenarioCount={appliedScenarioCount}
+            baseSeed={appliedParams.seed}
+            onConfigureScenarios={goToScenarioConfig}
+          />
+        )}
+
+        {activeTab === "conditional" && (
+          <ConditionalProbabilityTab
+            baseSeed={appliedParams.seed}
+            scenarioRaw={scenarioRaw}
+            scenarioError={scenarioError}
+            onScenarioRawChange={setScenarioRaw}
+            onRunScenarios={handleRunScenarios}
+            weeklyResult={weeklyConditionalResult}
+            monthlyResult={monthlyConditionalResult}
+          />
+        )}
       </main>
 
       <footer className="app-footer">

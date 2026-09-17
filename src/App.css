@@ -602,3 +602,343 @@ tbody td.negative {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- Main tab navigation ---------- */
+
+.main-tabs {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.main-tab {
+  flex: 1;
+  min-width: 120px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  padding: 10px 14px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.main-tab:hover {
+  color: var(--text-primary);
+}
+
+.main-tab-active,
+.main-tab-active:hover {
+  background: var(--accent-gradient);
+  color: #ffffff;
+}
+
+/* ---------- Shared section helpers (Weekly/Monthly/Conditional) ---------- */
+
+.section-intro {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.disclaimer-line {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.empty-state {
+  text-align: center;
+  gap: 6px;
+}
+
+.empty-state p {
+  color: var(--text-secondary);
+}
+
+.empty-state-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 10px 0 4px;
+}
+
+/* ---------- Period (Weekly/Monthly) table extras ---------- */
+
+.period-table {
+  min-width: 640px;
+}
+
+.status-cell {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+}
+
+.status-up {
+  color: var(--good);
+}
+
+.status-down {
+  color: var(--critical);
+}
+
+.status-flat {
+  color: var(--muted);
+}
+
+.chart-tooltip-value.positive {
+  color: var(--good);
+}
+
+.chart-tooltip-value.negative {
+  color: var(--critical);
+}
+
+/* ---------- Conditional Probability: scenario panel ---------- */
+
+.scenario-panel {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.scenario-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.scenario-controls .field {
+  flex: 1;
+  min-width: 220px;
+}
+
+.scenario-controls .run-button {
+  margin-top: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ---------- Conditional Probability: stat cards ---------- */
+
+.prob-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin: 14px 0 18px;
+}
+
+.prob-stat-card {
+  background: var(--page);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prob-stat-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.prob-stat-breakdown {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prob-stat-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.prob-stat-row dt {
+  color: var(--muted);
+}
+
+.prob-stat-row dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.prob-stat-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid var(--gridline);
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.prob-stat-value {
+  font-size: 18px;
+  color: var(--accent-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Conditional Probability: matrix ---------- */
+
+.matrix-heading {
+  font-size: 14px;
+  margin: 4px 0 8px;
+  color: var(--text-primary);
+}
+
+.matrix-table {
+  min-width: 420px;
+}
+
+.matrix-table th,
+.matrix-table td {
+  text-align: center;
+}
+
+.matrix-corner {
+  background: var(--surface-1);
+}
+
+.matrix-super-header {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.matrix-row-label {
+  text-align: left !important;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.matrix-cell {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.matrix-cell-up {
+  color: var(--good);
+}
+
+.matrix-cell-down {
+  color: var(--critical);
+}
+
+.matrix-cell-flat {
+  color: var(--muted);
+}
+
+.explanation-panel {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.explanation-panel p {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* ---------- Return Distribution ---------- */
+
+.dist-stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.link-button {
+  font: inherit;
+  font-size: inherit;
+  color: var(--accent-1);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link-button:hover {
+  color: var(--accent-2);
+}
+
+.info-card {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--page);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.info-card p {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.info-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary) !important;
+}
+
+/* ---------- Section dividers (Return Distribution / Conditional Probability) ---------- */
+
+.section-divider {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  padding-top: 4px;
+  margin-top: 4px;
+  border-top: 1px dashed var(--border);
+  padding-bottom: 2px;
+}
+
+@media (max-width: 480px) {
+  .main-tab {
+    min-width: 44%;
+    font-size: 12.5px;
+    padding: 9px 8px;
+  }
+
+  .scenario-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .scenario-controls .run-button {
+    width: 100%;
+  }
+
+  .prob-stat-grid {
+    grid-template-columns: 1fr;
+  }
+}

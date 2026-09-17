@@ -1,3 +1,5 @@
+import { MAX_SCENARIOS, MIN_SCENARIOS } from "./conditionalProbability";
+
 export interface ValidationErrors {
   startPrice?: string;
   meanDailyChangePercent?: string;
@@ -68,4 +70,19 @@ export function validateInputs(raw: RawInputs): ValidationErrors {
 
 export function hasErrors(errors: ValidationErrors): boolean {
   return Object.keys(errors).length > 0;
+}
+
+/** Validates the "Number of Scenarios" input used by Conditional Probability. */
+export function validateScenarioCount(raw: string): string | undefined {
+  const value = Number(raw);
+  if (raw.trim() === "" || Number.isNaN(value)) {
+    return "Enter a valid number.";
+  }
+  if (!Number.isInteger(value)) {
+    return "Number of scenarios must be a whole number.";
+  }
+  if (value < MIN_SCENARIOS || value > MAX_SCENARIOS) {
+    return `Number of scenarios must be between ${MIN_SCENARIOS} and ${MAX_SCENARIOS}.`;
+  }
+  return undefined;
 }
