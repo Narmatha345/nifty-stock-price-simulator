@@ -175,15 +175,17 @@ function App() {
         </div>
       </header>
 
-      <main className="app-main">
+      <main className={`app-main ${activeTab === "daily" ? "" : "app-main--full"}`}>
         <Tabs tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
 
-        <InputPanel
-          values={rawInputs}
-          errors={errors}
-          onChange={handleChange}
-          onRun={handleRun}
-        />
+        {activeTab === "daily" && (
+          <InputPanel
+            values={rawInputs}
+            errors={errors}
+            onChange={handleChange}
+            onRun={handleRun}
+          />
+        )}
 
         {activeTab === "daily" && (
           <div className="results">

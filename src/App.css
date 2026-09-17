@@ -112,6 +112,13 @@
   }
 }
 
+/* Weekly/Monthly/Conditional Probability tabs hide the sidebar (Simulation
+   Settings lives on Daily only, to avoid confusing users on the other tabs)
+   and use the full width instead. */
+.app-main.app-main--full {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 /* ---------- Sidebar / settings panel ---------- */
 
 .panel {
