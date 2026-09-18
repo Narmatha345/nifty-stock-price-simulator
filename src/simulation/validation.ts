@@ -1,61 +1,73 @@
-import { MAX_SCENARIOS, MIN_SCENARIOS } from "./conditionalProbability";
-
-export interface ValidationErrors {
-  startPrice?: string;
-  meanDailyChangePercent?: string;
-  dailyChangePercent?: string;
-  numberOfDays?: string;
-  seed?: string;
-}
-
-export const MAX_DAILY_CHANGE_PERCENT = 20;
-export const MAX_MEAN_DAILY_CHANGE_PERCENT = 20;
-export const MAX_NUMBER_OF_DAYS = 5000;
-
-export interface RawInputs {
-  startPrice: string;
-  meanDailyChangePercent: string;
-  dailyChangePercent: string;
-  numberOfDays: string;
+export interface RawPeriodInputs {
+  meanReturnPercent: string;
+  volatilityPercent: string;
+  numberOfPeriods: string;
   seed: string;
 }
 
-export function validateInputs(raw: RawInputs): ValidationErrors {
-  const errors: ValidationErrors = {};
+export interface RawInputs {
+  startPrice: string;
+  daily: RawPeriodInputs;
+  weekly: RawPeriodInputs;
+  monthly: RawPeriodInputs;
+}
 
-  const startPrice = Number(raw.startPrice);
-  if (raw.startPrice.trim() === "" || Number.isNaN(startPrice)) {
-    errors.startPrice = "Enter a valid number.";
-  } else if (startPrice <= 0) {
-    errors.startPrice = "Start price must be greater than 0.";
+export interface PeriodValidationErrors {
+  meanReturnPercent?: string;
+  volatilityPercent?: string;
+  numberOfPeriods?: string;
+  seed?: string;
+}
+
+export interface ValidationErrors {
+  startPrice?: string;
+  daily: PeriodValidationErrors;
+  weekly: PeriodValidationErrors;
+  monthly: PeriodValidationErrors;
+}
+
+export const MAX_VOLATILITY_PERCENT = 20;
+export const MAX_MEAN_RETURN_PERCENT = 20;
+export const MAX_NUMBER_OF_PERIODS = 5000;
+
+export function validateStartPrice(raw: string): string | undefined {
+  const startPrice = Number(raw);
+  if (raw.trim() === "" || Number.isNaN(startPrice)) {
+    return "Enter a valid number.";
+  }
+  if (startPrice <= 0) {
+    return "Start price must be greater than 0.";
+  }
+  return undefined;
+}
+
+/** Validates one period's inputs (Daily, Weekly, or Monthly all share the same shape and rules). */
+export function validatePeriodInputs(raw: RawPeriodInputs): PeriodValidationErrors {
+  const errors: PeriodValidationErrors = {};
+
+  const meanReturnPercent = Number(raw.meanReturnPercent);
+  if (raw.meanReturnPercent.trim() === "" || Number.isNaN(meanReturnPercent)) {
+    errors.meanReturnPercent = "Enter a valid number.";
+  } else if (Math.abs(meanReturnPercent) > MAX_MEAN_RETURN_PERCENT) {
+    errors.meanReturnPercent = `Keep mean return within +/-${MAX_MEAN_RETURN_PERCENT}% for a realistic simulation.`;
   }
 
-  const meanDailyChangePercent = Number(raw.meanDailyChangePercent);
-  if (
-    raw.meanDailyChangePercent.trim() === "" ||
-    Number.isNaN(meanDailyChangePercent)
-  ) {
-    errors.meanDailyChangePercent = "Enter a valid number.";
-  } else if (Math.abs(meanDailyChangePercent) > MAX_MEAN_DAILY_CHANGE_PERCENT) {
-    errors.meanDailyChangePercent = `Keep mean daily change within +/-${MAX_MEAN_DAILY_CHANGE_PERCENT}% for a realistic simulation.`;
+  const volatilityPercent = Number(raw.volatilityPercent);
+  if (raw.volatilityPercent.trim() === "" || Number.isNaN(volatilityPercent)) {
+    errors.volatilityPercent = "Enter a valid number.";
+  } else if (volatilityPercent <= 0) {
+    errors.volatilityPercent = "Volatility must be greater than 0%.";
+  } else if (volatilityPercent > MAX_VOLATILITY_PERCENT) {
+    errors.volatilityPercent = `Keep volatility at or below ${MAX_VOLATILITY_PERCENT}% for a realistic simulation.`;
   }
 
-  const dailyChangePercent = Number(raw.dailyChangePercent);
-  if (raw.dailyChangePercent.trim() === "" || Number.isNaN(dailyChangePercent)) {
-    errors.dailyChangePercent = "Enter a valid number.";
-  } else if (dailyChangePercent <= 0) {
-    errors.dailyChangePercent = "Daily price change must be greater than 0%.";
-  } else if (dailyChangePercent > MAX_DAILY_CHANGE_PERCENT) {
-    errors.dailyChangePercent = `Keep daily price change at or below ${MAX_DAILY_CHANGE_PERCENT}% for a realistic simulation.`;
-  }
-
-  const numberOfDays = Number(raw.numberOfDays);
-  if (raw.numberOfDays.trim() === "" || Number.isNaN(numberOfDays)) {
-    errors.numberOfDays = "Enter a valid number.";
-  } else if (!Number.isInteger(numberOfDays) || numberOfDays <= 0) {
-    errors.numberOfDays = "Number of days must be a positive integer.";
-  } else if (numberOfDays > MAX_NUMBER_OF_DAYS) {
-    errors.numberOfDays = `Number of days must be at most ${MAX_NUMBER_OF_DAYS}.`;
+  const numberOfPeriods = Number(raw.numberOfPeriods);
+  if (raw.numberOfPeriods.trim() === "" || Number.isNaN(numberOfPeriods)) {
+    errors.numberOfPeriods = "Enter a valid number.";
+  } else if (!Number.isInteger(numberOfPeriods) || numberOfPeriods <= 0) {
+    errors.numberOfPeriods = "Must be a positive integer.";
+  } else if (numberOfPeriods > MAX_NUMBER_OF_PERIODS) {
+    errors.numberOfPeriods = `Must be at most ${MAX_NUMBER_OF_PERIODS}.`;
   }
 
   const seed = Number(raw.seed);
@@ -68,21 +80,24 @@ export function validateInputs(raw: RawInputs): ValidationErrors {
   return errors;
 }
 
-export function hasErrors(errors: ValidationErrors): boolean {
+export function validateInputs(raw: RawInputs): ValidationErrors {
+  return {
+    startPrice: validateStartPrice(raw.startPrice),
+    daily: validatePeriodInputs(raw.daily),
+    weekly: validatePeriodInputs(raw.weekly),
+    monthly: validatePeriodInputs(raw.monthly),
+  };
+}
+
+export function hasPeriodErrors(errors: PeriodValidationErrors): boolean {
   return Object.keys(errors).length > 0;
 }
 
-/** Validates the "Number of Scenarios" input used by Conditional Probability. */
-export function validateScenarioCount(raw: string): string | undefined {
-  const value = Number(raw);
-  if (raw.trim() === "" || Number.isNaN(value)) {
-    return "Enter a valid number.";
-  }
-  if (!Number.isInteger(value)) {
-    return "Number of scenarios must be a whole number.";
-  }
-  if (value < MIN_SCENARIOS || value > MAX_SCENARIOS) {
-    return `Number of scenarios must be between ${MIN_SCENARIOS} and ${MAX_SCENARIOS}.`;
-  }
-  return undefined;
+export function hasErrors(errors: ValidationErrors): boolean {
+  return (
+    !!errors.startPrice ||
+    hasPeriodErrors(errors.daily) ||
+    hasPeriodErrors(errors.weekly) ||
+    hasPeriodErrors(errors.monthly)
+  );
 }

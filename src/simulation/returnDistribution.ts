@@ -39,12 +39,20 @@ export interface HistogramBucket {
  * Bins returns into equal-width buckets spanning [min, max] for a histogram.
  * This is the empirical distribution of the simulated returns — not a
  * theoretical curve.
+ *
+ * Pass `range` to bin against a shared [min, max] instead of this series'
+ * own — e.g. so Daily/Weekly/Monthly histograms line up on the same x-axis
+ * for a combined chart.
  */
-export function buildHistogram(returns: number[], bucketCount = 22): HistogramBucket[] {
+export function buildHistogram(
+  returns: number[],
+  bucketCount = 22,
+  range?: [number, number]
+): HistogramBucket[] {
   if (returns.length === 0) return [];
 
-  const min = Math.min(...returns);
-  const max = Math.max(...returns);
+  const min = range ? range[0] : Math.min(...returns);
+  const max = range ? range[1] : Math.max(...returns);
 
   if (min === max) {
     return [{ rangeStart: min, rangeEnd: max, midpoint: min, count: returns.length }];

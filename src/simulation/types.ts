@@ -1,15 +1,19 @@
+/** "daily" | "weekly" | "monthly" — identifies which of the three independent simulations a value belongs to. */
+export type PeriodKind = "daily" | "weekly" | "monthly";
+
 export interface SimulationParams {
   startPrice: number;
-  meanDailyChangePercent: number;
-  dailyChangePercent: number;
-  numberOfDays: number;
+  meanReturnPercent: number;
+  volatilityPercent: number;
+  numberOfPeriods: number;
   seed: number;
 }
 
-export interface SimulationDay {
-  day: number;
+export interface SimulationStep {
+  /** 0 = starting price (before any simulated period has elapsed). */
+  index: number;
   randomZ: number | null;
-  dailyReturnPercent: number | null;
+  returnPercent: number | null;
   price: number;
 }
 
@@ -19,50 +23,14 @@ export interface SimulationSummary {
   highPrice: number;
   lowPrice: number;
   totalPercentChange: number;
+  /** Empirical mean of the realized per-period returns (not the input mean). */
+  meanReturnPercent: number;
+  /** Empirical standard deviation of the realized per-period returns (not the input volatility). */
+  volatilityPercent: number;
+  observations: number;
 }
 
 export interface SimulationResult {
-  days: SimulationDay[];
+  steps: SimulationStep[];
   summary: SimulationSummary;
-}
-
-export interface DistributionPoint {
-  x: number;
-  y: number;
-}
-
-/** Direction of a completed weekly/monthly period, derived from its return %. */
-export type PeriodStatus = "UP" | "DOWN" | "FLAT";
-
-/**
- * A completed weekly or monthly period aggregated from daily simulation data.
- * Shared shape for both Weekly and Monthly Analysis.
- */
-export interface AggregatedPeriod {
-  periodNumber: number;
-  startPrice: number;
-  endPrice: number;
-  returnPercent: number;
-  highPrice: number;
-  lowPrice: number;
-  status: PeriodStatus;
-}
-
-/** One cell of a conditional-probability matrix: current condition -> next condition. */
-export interface ConditionalCell {
-  /** Count of simulated periods observed with the current (row) condition. */
-  observations: number;
-  /** Count of those periods whose following period matched the next (column) condition. */
-  matchCount: number;
-  /** matchCount / observations as a percentage, or null when observations is 0 (display "N/A"). */
-  probability: number | null;
-}
-
-/** Current condition (row) -> next condition (column) -> cell. */
-export type ConditionalMatrix = Record<PeriodStatus, Record<PeriodStatus, ConditionalCell>>;
-
-export interface ConditionalProbabilityResult {
-  matrix: ConditionalMatrix;
-  /** Total current->next period transitions observed across all scenarios. */
-  totalTransitions: number;
 }

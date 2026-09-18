@@ -1,61 +1,70 @@
 import { createSeededNormalGenerator } from "./rng";
-import type { SimulationParams, SimulationResult, SimulationDay } from "./types";
+import { calculateReturnStats } from "./returnDistribution";
+import type { SimulationParams, SimulationResult, SimulationStep } from "./types";
 
 /** Smallest price the simulation will report; prevents zero/negative prices. */
 export const MIN_SIMULATED_PRICE = 0.01;
 
 /**
- * Runs a deterministic, seeded simulation of daily price movements.
+ * Runs a deterministic, seeded simulation of period-over-period price
+ * movements. Period-agnostic: the same function drives the Daily, Weekly,
+ * and Monthly simulations — each call is fed that period's own mean
+ * return, volatility, period count, and seed.
  *
  * Reproducibility contract: the same params always produce the same output,
- * and the seeded normal generator is consumed strictly in day order so that
- * increasing numberOfDays preserves every previously generated day.
+ * and the seeded normal generator is consumed strictly in step order so that
+ * increasing numberOfPeriods preserves every previously generated step.
  */
 export function simulateNifty({
   startPrice,
-  meanDailyChangePercent,
-  dailyChangePercent,
-  numberOfDays,
+  meanReturnPercent,
+  volatilityPercent,
+  numberOfPeriods,
   seed,
 }: SimulationParams): SimulationResult {
   const nextNormal = createSeededNormalGenerator(seed);
-  const dailyMean = meanDailyChangePercent / 100;
-  const dailyVolatility = dailyChangePercent / 100;
+  const mean = meanReturnPercent / 100;
+  const volatility = volatilityPercent / 100;
 
-  const days: SimulationDay[] = [
-    { day: 0, randomZ: null, dailyReturnPercent: null, price: startPrice },
+  const steps: SimulationStep[] = [
+    { index: 0, randomZ: null, returnPercent: null, price: startPrice },
   ];
 
   let previousPrice = startPrice;
-  for (let day = 1; day <= numberOfDays; day++) {
+  for (let i = 1; i <= numberOfPeriods; i++) {
     const z = nextNormal();
-    const dailyReturn = dailyMean + z * dailyVolatility;
-    let price = previousPrice * (1 + dailyReturn);
+    const periodReturn = mean + z * volatility;
+    let price = previousPrice * (1 + periodReturn);
 
     if (!Number.isFinite(price) || price <= 0) {
       price = MIN_SIMULATED_PRICE;
     }
 
-    days.push({
-      day,
+    steps.push({
+      index: i,
       randomZ: z,
-      dailyReturnPercent: dailyReturn * 100,
+      returnPercent: periodReturn * 100,
       price,
     });
     previousPrice = price;
   }
 
-  const prices = days.map((d) => d.price);
+  const prices = steps.map((s) => s.price);
   const endPrice = prices[prices.length - 1];
+  const realizedReturns = steps.slice(1).map((s) => s.returnPercent as number);
+  const stats = calculateReturnStats(realizedReturns);
 
   return {
-    days,
+    steps,
     summary: {
       startPrice,
       endPrice,
       highPrice: Math.max(...prices),
       lowPrice: Math.min(...prices),
       totalPercentChange: ((endPrice - startPrice) / startPrice) * 100,
+      meanReturnPercent: stats?.mean ?? 0,
+      volatilityPercent: stats?.stdDev ?? 0,
+      observations: stats?.count ?? 0,
     },
   };
 }

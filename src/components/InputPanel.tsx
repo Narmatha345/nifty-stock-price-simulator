@@ -1,4 +1,4 @@
-import type { RawInputs, ValidationErrors } from "../simulation/validation";
+import type { PeriodValidationErrors, RawPeriodInputs } from "../simulation/validation";
 import {
   ActivityIcon,
   CalendarIcon,
@@ -8,14 +8,129 @@ import {
   TrendingUpIcon,
 } from "./icons";
 
-interface InputPanelProps {
-  values: RawInputs;
-  errors: ValidationErrors;
-  onChange: (field: keyof RawInputs, value: string) => void;
-  onRun: () => void;
+interface PeriodInputGroupProps {
+  /** "Daily" | "Weekly" | "Monthly" */
+  title: string;
+  /** "day" | "week" | "month" — used to build field ids and unit text. */
+  unit: string;
+  values: RawPeriodInputs;
+  errors: PeriodValidationErrors;
+  onChange: (field: keyof RawPeriodInputs, value: string) => void;
 }
 
-export function InputPanel({ values, errors, onChange, onRun }: InputPanelProps) {
+function PeriodInputGroup({ title, unit, values, errors, onChange }: PeriodInputGroupProps) {
+  const idPrefix = unit;
+
+  return (
+    <fieldset className="period-input-group">
+      <legend>{title} Simulation</legend>
+
+      <div className="field">
+        <label htmlFor={`${idPrefix}-meanReturnPercent`}>
+          <TrendingUpIcon size={14} className="field-icon" />
+          {title} Mean Return (%)
+        </label>
+        <input
+          id={`${idPrefix}-meanReturnPercent`}
+          type="number"
+          inputMode="decimal"
+          step="0.1"
+          value={values.meanReturnPercent}
+          onChange={(e) => onChange("meanReturnPercent", e.target.value)}
+          aria-invalid={!!errors.meanReturnPercent}
+        />
+        {errors.meanReturnPercent && <p className="field-error">{errors.meanReturnPercent}</p>}
+      </div>
+
+      <div className="field">
+        <label htmlFor={`${idPrefix}-volatilityPercent`}>
+          <ActivityIcon size={14} className="field-icon" />
+          {title} Volatility (%)
+        </label>
+        <input
+          id={`${idPrefix}-volatilityPercent`}
+          type="number"
+          inputMode="decimal"
+          step="0.1"
+          value={values.volatilityPercent}
+          onChange={(e) => onChange("volatilityPercent", e.target.value)}
+          aria-invalid={!!errors.volatilityPercent}
+        />
+        {errors.volatilityPercent && <p className="field-error">{errors.volatilityPercent}</p>}
+      </div>
+
+      <div className="field">
+        <label htmlFor={`${idPrefix}-numberOfPeriods`}>
+          <CalendarIcon size={14} className="field-icon" />
+          Number of {title === "Daily" ? "Days" : title === "Weekly" ? "Weeks" : "Months"}
+        </label>
+        <input
+          id={`${idPrefix}-numberOfPeriods`}
+          type="number"
+          inputMode="numeric"
+          step="1"
+          value={values.numberOfPeriods}
+          onChange={(e) => onChange("numberOfPeriods", e.target.value)}
+          aria-invalid={!!errors.numberOfPeriods}
+        />
+        {errors.numberOfPeriods && <p className="field-error">{errors.numberOfPeriods}</p>}
+      </div>
+
+      <div className="field">
+        <label htmlFor={`${idPrefix}-seed`}>
+          <HashIcon size={14} className="field-icon" />
+          Random Seed
+        </label>
+        <input
+          id={`${idPrefix}-seed`}
+          type="number"
+          inputMode="numeric"
+          step="1"
+          value={values.seed}
+          onChange={(e) => onChange("seed", e.target.value)}
+          aria-invalid={!!errors.seed}
+        />
+        {errors.seed && <p className="field-error">{errors.seed}</p>}
+      </div>
+    </fieldset>
+  );
+}
+
+interface InputPanelProps {
+  startPrice: string;
+  onStartPriceChange: (value: string) => void;
+  startPriceError?: string;
+
+  daily: RawPeriodInputs;
+  dailyErrors: PeriodValidationErrors;
+  onDailyChange: (field: keyof RawPeriodInputs, value: string) => void;
+
+  weekly: RawPeriodInputs;
+  weeklyErrors: PeriodValidationErrors;
+  onWeeklyChange: (field: keyof RawPeriodInputs, value: string) => void;
+
+  monthly: RawPeriodInputs;
+  monthlyErrors: PeriodValidationErrors;
+  onMonthlyChange: (field: keyof RawPeriodInputs, value: string) => void;
+
+  onSimulateAll: () => void;
+}
+
+export function InputPanel({
+  startPrice,
+  onStartPriceChange,
+  startPriceError,
+  daily,
+  dailyErrors,
+  onDailyChange,
+  weekly,
+  weeklyErrors,
+  onWeeklyChange,
+  monthly,
+  monthlyErrors,
+  onMonthlyChange,
+  onSimulateAll,
+}: InputPanelProps) {
   return (
     <section className="panel input-panel" aria-label="Simulation inputs">
       <div className="panel-heading">
@@ -34,98 +149,41 @@ export function InputPanel({ values, errors, onChange, onRun }: InputPanelProps)
           id="startPrice"
           type="number"
           inputMode="decimal"
-          value={values.startPrice}
-          onChange={(e) => onChange("startPrice", e.target.value)}
-          aria-invalid={!!errors.startPrice}
+          value={startPrice}
+          onChange={(e) => onStartPriceChange(e.target.value)}
+          aria-invalid={!!startPriceError}
         />
-        {errors.startPrice && <p className="field-error">{errors.startPrice}</p>}
+        <p className="field-hint">Used as the starting price for all three simulations below.</p>
+        {startPriceError && <p className="field-error">{startPriceError}</p>}
       </div>
 
-      <div className="field">
-        <label htmlFor="meanDailyChangePercent">
-          <TrendingUpIcon size={14} className="field-icon" />
-          Mean Daily Return (%)
-        </label>
-        <input
-          id="meanDailyChangePercent"
-          type="number"
-          inputMode="decimal"
-          step="0.1"
-          value={values.meanDailyChangePercent}
-          onChange={(e) => onChange("meanDailyChangePercent", e.target.value)}
-          aria-invalid={!!errors.meanDailyChangePercent}
+      <div className="period-input-groups">
+        <PeriodInputGroup
+          title="Daily"
+          unit="day"
+          values={daily}
+          errors={dailyErrors}
+          onChange={onDailyChange}
         />
-        <p className="field-hint">
-          Mean (μ) of the simulated daily return distribution.
-        </p>
-        {errors.meanDailyChangePercent && (
-          <p className="field-error">{errors.meanDailyChangePercent}</p>
-        )}
+        <PeriodInputGroup
+          title="Weekly"
+          unit="week"
+          values={weekly}
+          errors={weeklyErrors}
+          onChange={onWeeklyChange}
+        />
+        <PeriodInputGroup
+          title="Monthly"
+          unit="month"
+          values={monthly}
+          errors={monthlyErrors}
+          onChange={onMonthlyChange}
+        />
       </div>
 
-      <div className="field">
-        <label htmlFor="dailyChangePercent">
-          <ActivityIcon size={14} className="field-icon" />
-          Daily Volatility (%)
-        </label>
-        <input
-          id="dailyChangePercent"
-          type="number"
-          inputMode="decimal"
-          step="0.1"
-          value={values.dailyChangePercent}
-          onChange={(e) => onChange("dailyChangePercent", e.target.value)}
-          aria-invalid={!!errors.dailyChangePercent}
-        />
-        <p className="field-hint">
-          Standard deviation (σ) of the simulated daily return distribution.
-        </p>
-        {errors.dailyChangePercent && (
-          <p className="field-error">{errors.dailyChangePercent}</p>
-        )}
-      </div>
-
-      <div className="field">
-        <label htmlFor="numberOfDays">
-          <CalendarIcon size={14} className="field-icon" />
-          Number of Days
-        </label>
-        <input
-          id="numberOfDays"
-          type="number"
-          inputMode="numeric"
-          step="1"
-          value={values.numberOfDays}
-          onChange={(e) => onChange("numberOfDays", e.target.value)}
-          aria-invalid={!!errors.numberOfDays}
-        />
-        {errors.numberOfDays && <p className="field-error">{errors.numberOfDays}</p>}
-      </div>
-
-      <div className="field">
-        <label htmlFor="seed">
-          <HashIcon size={14} className="field-icon" />
-          Random Seed
-        </label>
-        <input
-          id="seed"
-          type="number"
-          inputMode="numeric"
-          step="1"
-          value={values.seed}
-          onChange={(e) => onChange("seed", e.target.value)}
-          aria-invalid={!!errors.seed}
-        />
-        <p className="field-hint">
-          Seed controls the random sequence. Using the same seed reproduces the same
-          simulation.
-        </p>
-        {errors.seed && <p className="field-error">{errors.seed}</p>}
-      </div>
-
-      <button type="button" className="run-button" onClick={onRun}>
+      <button type="button" className="run-button" onClick={onSimulateAll}>
         <PlayIcon size={16} />
-        Simulate
+        Simulate All
       </button>
     </section>
   );

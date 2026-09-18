@@ -13,6 +13,8 @@
   --border: rgba(139, 124, 255, 0.16);
   --border-strong: rgba(148, 138, 255, 0.32);
   --series-1: #8b7bff;
+  --series-2: #38bdf8;
+  --series-3: #fbbf24;
   --accent-1: #6366f1;
   --accent-2: #a855f7;
   --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
@@ -53,6 +55,8 @@
   --border: rgba(99, 102, 241, 0.18);
   --border-strong: rgba(99, 102, 241, 0.34);
   --series-1: #6366f1;
+  --series-2: #0ea5e9;
+  --series-3: #d97706;
   --accent-1: #6366f1;
   --accent-2: #a855f7;
   --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
