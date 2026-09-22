@@ -83,3 +83,70 @@ export interface CombinedSimulationResult {
   /** Every applied monthly return (%), one per month boundary that landed within the horizon. */
   monthlyReturns: number[];
 }
+
+/**
+ * Percentile summary of a value across many simulated paths (a day's price,
+ * a week/month checkpoint's realized return, or the ending-price
+ * distribution). `sampled` is true when this came from a bounded reservoir
+ * sample rather than the exact population (see simulateMultiPath for when
+ * that applies) — the UI must say so, never present it as exact silently.
+ */
+export interface PercentileBand {
+  min: number;
+  p10: number;
+  p25: number;
+  median: number;
+  p75: number;
+  p90: number;
+  max: number;
+  sampled: boolean;
+}
+
+export interface MultiPathDayBand extends PercentileBand {
+  day: number;
+}
+
+export interface MultiPathCheckpointBand extends PercentileBand {
+  /** 1-based week/month number. */
+  index: number;
+  /** The day index this checkpoint falls on. */
+  day: number;
+}
+
+export interface MultiPathSummary {
+  numberOfPaths: number;
+  totalDays: number;
+  startPrice: number;
+  /** Percentile distribution of every path's final price. Always exact (see simulateMultiPath). */
+  endPrice: PercentileBand;
+  /** Share of paths that ended above the starting price, 0-100. */
+  percentProfitable: number;
+  /** Path index (0-based) whose ending price is closest to the median — for "view the median path". */
+  medianPathIndex: number;
+  /** Path index with the highest ending price. */
+  bestPathIndex: number;
+  /** Path index with the lowest ending price. */
+  worstPathIndex: number;
+}
+
+export interface MultiPathResult {
+  summary: MultiPathSummary;
+  /** One percentile band per simulated day (index 0 = start), for the fan chart. */
+  dayBands: MultiPathDayBand[];
+  weekBands: MultiPathCheckpointBand[];
+  monthBands: MultiPathCheckpointBand[];
+  /** Every path's exact final price — always exact regardless of path count, since it's only one number per path. */
+  endingPrices: number[];
+}
+
+export interface MultiPathRequest {
+  daily: SimulationParams;
+  weekly: SimulationParams;
+  monthly: SimulationParams;
+  numberOfPaths: number;
+}
+
+export type MultiPathWorkerMessage =
+  | { type: "progress"; completed: number; total: number }
+  | { type: "done"; result: MultiPathResult; elapsedMs: number }
+  | { type: "error"; message: string };

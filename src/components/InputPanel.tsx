@@ -3,6 +3,7 @@ import {
   ActivityIcon,
   CalendarIcon,
   HashIcon,
+  LayersIcon,
   PlayIcon,
   RupeeIcon,
   TrendingUpIcon,
@@ -101,6 +102,12 @@ interface InputPanelProps {
   onStartPriceChange: (value: string) => void;
   startPriceError?: string;
 
+  numberOfPaths: string;
+  onNumberOfPathsChange: (value: string) => void;
+  numberOfPathsError?: string;
+  /** Plain-language heads-up when paths * days is large enough that a run may take a while — not a blocking error. */
+  scaleWarning?: string;
+
   daily: RawPeriodInputs;
   dailyErrors: PeriodValidationErrors;
   onDailyChange: (field: keyof RawPeriodInputs, value: string) => void;
@@ -114,12 +121,19 @@ interface InputPanelProps {
   onMonthlyChange: (field: keyof RawPeriodInputs, value: string) => void;
 
   onSimulateAll: () => void;
+  /** Set while a multi-path batch is running in the background worker. */
+  progress: { completed: number; total: number } | null;
+  onCancel: () => void;
 }
 
 export function InputPanel({
   startPrice,
   onStartPriceChange,
   startPriceError,
+  numberOfPaths,
+  onNumberOfPathsChange,
+  numberOfPathsError,
+  scaleWarning,
   daily,
   dailyErrors,
   onDailyChange,
@@ -130,6 +144,8 @@ export function InputPanel({
   monthlyErrors,
   onMonthlyChange,
   onSimulateAll,
+  progress,
+  onCancel,
 }: InputPanelProps) {
   return (
     <section className="panel input-panel" aria-label="Simulation inputs">
@@ -160,6 +176,29 @@ export function InputPanel({
         {startPriceError && <p className="field-error">{startPriceError}</p>}
       </div>
 
+      <div className="field">
+        <label htmlFor="numberOfPaths">
+          <LayersIcon size={14} className="field-icon" />
+          Number of Simulations
+        </label>
+        <input
+          id="numberOfPaths"
+          type="number"
+          inputMode="numeric"
+          step="1"
+          min={1}
+          value={numberOfPaths}
+          onChange={(e) => onNumberOfPathsChange(e.target.value)}
+          aria-invalid={!!numberOfPathsError}
+        />
+        <p className="field-hint">
+          Runs this many independent price paths with the same inputs (up to 1,000,000). 1 shows
+          the exact path as before; more shows a median line with a 10th-90th percentile range.
+        </p>
+        {numberOfPathsError && <p className="field-error">{numberOfPathsError}</p>}
+        {!numberOfPathsError && scaleWarning && <p className="field-warning">{scaleWarning}</p>}
+      </div>
+
       <div className="period-input-groups">
         <PeriodInputGroup
           title="Daily"
@@ -184,10 +223,30 @@ export function InputPanel({
         />
       </div>
 
-      <button type="button" className="run-button" onClick={onSimulateAll}>
-        <PlayIcon size={16} />
-        Simulate
-      </button>
+      {progress ? (
+        <div className="simulate-progress">
+          <div className="simulate-progress-bar">
+            <div
+              className="simulate-progress-fill"
+              style={{ width: `${Math.round((progress.completed / progress.total) * 100)}%` }}
+            />
+          </div>
+          <div className="simulate-progress-row">
+            <span>
+              Simulating path {progress.completed.toLocaleString("en-IN")} of{" "}
+              {progress.total.toLocaleString("en-IN")}
+            </span>
+            <button type="button" className="cancel-button" onClick={onCancel}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" className="run-button" onClick={onSimulateAll}>
+          <PlayIcon size={16} />
+          Simulate
+        </button>
+      )}
     </section>
   );
 }

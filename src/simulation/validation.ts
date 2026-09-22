@@ -7,6 +7,7 @@ export interface RawPeriodInputs {
 
 export interface RawInputs {
   startPrice: string;
+  numberOfPaths: string;
   daily: RawPeriodInputs;
   weekly: RawPeriodInputs;
   monthly: RawPeriodInputs;
@@ -21,6 +22,7 @@ export interface PeriodValidationErrors {
 
 export interface ValidationErrors {
   startPrice?: string;
+  numberOfPaths?: string;
   daily: PeriodValidationErrors;
   weekly: PeriodValidationErrors;
   monthly: PeriodValidationErrors;
@@ -29,6 +31,8 @@ export interface ValidationErrors {
 export const MAX_VOLATILITY_PERCENT = 20;
 export const MAX_MEAN_RETURN_PERCENT = 20;
 export const MAX_NUMBER_OF_PERIODS = 5000;
+export const MIN_NUMBER_OF_PATHS = 1;
+export const MAX_NUMBER_OF_PATHS = 1_000_000;
 
 export function validateStartPrice(raw: string): string | undefined {
   const startPrice = Number(raw);
@@ -37,6 +41,20 @@ export function validateStartPrice(raw: string): string | undefined {
   }
   if (startPrice <= 0) {
     return "Start price must be greater than 0.";
+  }
+  return undefined;
+}
+
+export function validateNumberOfPaths(raw: string): string | undefined {
+  const numberOfPaths = Number(raw);
+  if (raw.trim() === "" || Number.isNaN(numberOfPaths)) {
+    return "Enter a valid integer.";
+  }
+  if (!Number.isInteger(numberOfPaths) || numberOfPaths < MIN_NUMBER_OF_PATHS) {
+    return `Must be a whole number of at least ${MIN_NUMBER_OF_PATHS}.`;
+  }
+  if (numberOfPaths > MAX_NUMBER_OF_PATHS) {
+    return `Must be at most ${MAX_NUMBER_OF_PATHS.toLocaleString("en-IN")}.`;
   }
   return undefined;
 }
@@ -83,6 +101,7 @@ export function validatePeriodInputs(raw: RawPeriodInputs): PeriodValidationErro
 export function validateInputs(raw: RawInputs): ValidationErrors {
   return {
     startPrice: validateStartPrice(raw.startPrice),
+    numberOfPaths: validateNumberOfPaths(raw.numberOfPaths),
     daily: validatePeriodInputs(raw.daily),
     weekly: validatePeriodInputs(raw.weekly),
     monthly: validatePeriodInputs(raw.monthly),
@@ -96,6 +115,7 @@ export function hasPeriodErrors(errors: PeriodValidationErrors): boolean {
 export function hasErrors(errors: ValidationErrors): boolean {
   return (
     !!errors.startPrice ||
+    !!errors.numberOfPaths ||
     hasPeriodErrors(errors.daily) ||
     hasPeriodErrors(errors.weekly) ||
     hasPeriodErrors(errors.monthly)

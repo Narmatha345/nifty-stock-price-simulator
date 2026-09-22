@@ -13,6 +13,16 @@ function mulberry32(seed: number): () => number {
 }
 
 /**
+ * Returns a function that yields uniform [0, 1) values, seeded
+ * deterministically — reuses the same mulberry32 PRNG as the normal
+ * generator below, for anything that needs raw uniform draws (e.g. reservoir
+ * sampling) rather than normally-distributed ones.
+ */
+export function createSeededUniformGenerator(seed: number): () => number {
+  return mulberry32(seed);
+}
+
+/**
  * Returns a function that yields standard normal (mean 0, sd 1) values using
  * the Box-Muller transform, seeded deterministically. Box-Muller produces two
  * independent normal values per pair of uniform draws; the second is cached

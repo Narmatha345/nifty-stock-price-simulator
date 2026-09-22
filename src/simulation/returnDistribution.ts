@@ -33,6 +33,8 @@ export interface HistogramBucket {
   rangeEnd: number;
   midpoint: number;
   count: number;
+  /** Labels for the values that landed in this bucket, in input order — populated only when `labels` is passed to buildHistogram. */
+  labels: string[];
 }
 
 /**
@@ -43,32 +45,53 @@ export interface HistogramBucket {
  * Pass `range` to bin against a shared [min, max] instead of this series'
  * own — e.g. so Daily/Weekly/Monthly histograms line up on the same x-axis
  * for a combined chart.
+ *
+ * Pass `labels` (same length/order as `returns`, e.g. a formatted date per
+ * return) to also collect which labels landed in each bucket — lets a
+ * tooltip show exactly which days produced a given return range.
  */
 export function buildHistogram(
   returns: number[],
   bucketCount = 22,
-  range?: [number, number]
+  range?: [number, number],
+  labels?: string[]
 ): HistogramBucket[] {
   if (returns.length === 0) return [];
 
-  const min = range ? range[0] : Math.min(...returns);
-  const max = range ? range[1] : Math.max(...returns);
+  // Loop instead of Math.min(...returns)/Math.max(...returns): spreading a
+  // huge array (e.g. 1,000,000 ending prices) into a function call blows the
+  // engine's call-stack argument limit ("Maximum call stack size exceeded").
+  let min: number;
+  let max: number;
+  if (range) {
+    [min, max] = range;
+  } else {
+    min = returns[0];
+    max = returns[0];
+    for (const r of returns) {
+      if (r < min) min = r;
+      if (r > max) max = r;
+    }
+  }
 
   if (min === max) {
-    return [{ rangeStart: min, rangeEnd: max, midpoint: min, count: returns.length }];
+    return [
+      { rangeStart: min, rangeEnd: max, midpoint: min, count: returns.length, labels: labels ? [...labels] : [] },
+    ];
   }
 
   const width = (max - min) / bucketCount;
   const buckets: HistogramBucket[] = Array.from({ length: bucketCount }, (_, i) => {
     const rangeStart = min + i * width;
     const rangeEnd = rangeStart + width;
-    return { rangeStart, rangeEnd, midpoint: (rangeStart + rangeEnd) / 2, count: 0 };
+    return { rangeStart, rangeEnd, midpoint: (rangeStart + rangeEnd) / 2, count: 0, labels: [] };
   });
 
-  for (const r of returns) {
+  returns.forEach((r, i) => {
     const index = Math.min(bucketCount - 1, Math.max(0, Math.floor((r - min) / width)));
     buckets[index].count += 1;
-  }
+    if (labels) buckets[index].labels.push(labels[i]);
+  });
 
   return buckets;
 }
