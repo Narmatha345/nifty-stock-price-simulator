@@ -153,7 +153,10 @@ export function InputPanel({
           onChange={(e) => onStartPriceChange(e.target.value)}
           aria-invalid={!!startPriceError}
         />
-        <p className="field-hint">Used as the starting price for all three simulations below.</p>
+        <p className="field-hint">
+          Used as the starting price for the single combined simulation below — Daily, Weekly, and
+          Monthly inputs act as constraints on that one price path.
+        </p>
         {startPriceError && <p className="field-error">{startPriceError}</p>}
       </div>
 
@@ -183,7 +186,7 @@ export function InputPanel({
 
       <button type="button" className="run-button" onClick={onSimulateAll}>
         <PlayIcon size={16} />
-        Simulate All
+        Simulate
       </button>
     </section>
   );

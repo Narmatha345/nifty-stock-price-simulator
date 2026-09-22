@@ -542,7 +542,7 @@ tbody td.negative {
   }
 }
 
-/* ---------- Combined results (Daily / Weekly / Monthly side by side) ---------- */
+/* ---------- Combined results (single simulation, Daily/Weekly/Monthly constraints) ---------- */
 
 .empty-state-text {
   font-size: 13px;
@@ -550,15 +550,46 @@ tbody td.negative {
   padding: 10px 0 4px;
 }
 
-.results-summary-table {
-  min-width: 480px;
+.stat-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 10px 0 14px;
+  border-bottom: 1px solid var(--gridline);
+  margin-bottom: 4px;
 }
 
-.results-summary-table td:first-child {
-  color: var(--text-secondary);
-  font-weight: 500;
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 96px;
 }
 
-.results-summary-table td:not(:first-child) {
+.stat-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.stat-value {
+  font-size: 14px;
   font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-value.positive {
+  color: var(--good);
+}
+
+.stat-value.negative {
+  color: var(--critical);
+}
+
+.week-boundary-row td {
+  background: color-mix(in srgb, var(--series-2) 8%, transparent);
+}
+
+.month-boundary-row td {
+  background: color-mix(in srgb, var(--series-3) 10%, transparent);
 }

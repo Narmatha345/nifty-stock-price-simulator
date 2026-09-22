@@ -4,11 +4,10 @@ import { InputPanel } from "./components/InputPanel";
 import { CombinedResultsTable } from "./components/CombinedResultsTable";
 import { CombinedPriceChart } from "./components/CombinedPriceChart";
 import { CombinedReturnDistributionChart } from "./components/CombinedReturnDistributionChart";
-import { ExactReturnsTable } from "./components/ExactReturnsTable";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { MarketIcon } from "./components/icons";
-import { simulateNifty } from "./simulation/simulateNifty";
-import type { SimulationParams, SimulationStep } from "./simulation/types";
+import { simulateCombinedNifty } from "./simulation/simulateNifty";
+import type { SimulationParams } from "./simulation/types";
 import {
   validateInputs,
   hasErrors,
@@ -62,13 +61,6 @@ function toPeriodParams(startPrice: number, raw: RawPeriodInputs): SimulationPar
   };
 }
 
-function extractReturns(steps: SimulationStep[]): number[] {
-  return steps
-    .slice(1)
-    .map((s) => s.returnPercent)
-    .filter((r): r is number => r !== null);
-}
-
 function toAppliedParams(raw: RawInputs): AppliedParams {
   const startPrice = Number(raw.startPrice);
   return {
@@ -119,20 +111,11 @@ function App() {
     setAppliedParams(toAppliedParams(rawInputs));
   };
 
-  // Each simulation only recomputes when its own applied params change, so
-  // editing Weekly inputs never re-runs Daily or Monthly.
-  const dailyResult = useMemo(() => simulateNifty(appliedParams.daily), [appliedParams.daily]);
-  const weeklyResult = useMemo(() => simulateNifty(appliedParams.weekly), [appliedParams.weekly]);
-  const monthlyResult = useMemo(
-    () => simulateNifty(appliedParams.monthly),
-    [appliedParams.monthly]
-  );
-
-  const dailyReturns = useMemo(() => extractReturns(dailyResult.steps), [dailyResult.steps]);
-  const weeklyReturns = useMemo(() => extractReturns(weeklyResult.steps), [weeklyResult.steps]);
-  const monthlyReturns = useMemo(
-    () => extractReturns(monthlyResult.steps),
-    [monthlyResult.steps]
+  // One combined run: the Daily/Weekly/Monthly inputs are three constraints
+  // applied to the same price path, not three independent simulations.
+  const combinedResult = useMemo(
+    () => simulateCombinedNifty(appliedParams.daily, appliedParams.weekly, appliedParams.monthly),
+    [appliedParams.daily, appliedParams.weekly, appliedParams.monthly]
   );
 
   return (
@@ -170,26 +153,9 @@ function App() {
         />
 
         <div className="results">
-          <CombinedResultsTable
-            daily={dailyResult.summary}
-            weekly={weeklyResult.summary}
-            monthly={monthlyResult.summary}
-          />
-          <CombinedPriceChart
-            daily={dailyResult.steps}
-            weekly={weeklyResult.steps}
-            monthly={monthlyResult.steps}
-          />
-          <CombinedReturnDistributionChart
-            dailyReturns={dailyReturns}
-            weeklyReturns={weeklyReturns}
-            monthlyReturns={monthlyReturns}
-          />
-          <ExactReturnsTable
-            dailyReturns={dailyReturns}
-            weeklyReturns={weeklyReturns}
-            monthlyReturns={monthlyReturns}
-          />
+          <CombinedPriceChart steps={combinedResult.steps} />
+          <CombinedReturnDistributionChart dailyReturns={combinedResult.dailyReturns} />
+          <CombinedResultsTable result={combinedResult} />
         </div>
       </main>
 

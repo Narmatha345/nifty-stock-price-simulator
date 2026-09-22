@@ -1,34 +1,39 @@
 import {
   ResponsiveContainer,
-  LineChart,
+  ComposedChart,
   Line,
+  Scatter,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
 } from "recharts";
-import type { SimulationStep } from "../simulation/types";
-import { formatCurrency } from "../utils/format";
+import type { CombinedSimulationStep } from "../simulation/types";
+import { formatCurrency, formatPercent } from "../utils/format";
 import { ChartLegend } from "./ChartLegend";
 import { MarketIcon } from "./icons";
 
 interface CombinedPriceChartProps {
-  daily: SimulationStep[];
-  weekly: SimulationStep[];
-  monthly: SimulationStep[];
+  steps: CombinedSimulationStep[];
 }
 
 interface ChartRow {
-  index: number;
-  daily?: number;
-  weekly?: number;
-  monthly?: number;
+  day: number;
+  price: number;
+  weeklyMarker?: number;
+  monthlyMarker?: number;
+  weeklyReturnPercent: number | null;
+  weeklyTargetReturnPercent: number | null;
+  monthlyReturnPercent: number | null;
+  monthlyTargetReturnPercent: number | null;
+  weekIndex: number | null;
+  monthIndex: number | null;
 }
 
-const SERIES = [
-  { key: "daily" as const, name: "Daily", color: "var(--series-1)" },
-  { key: "weekly" as const, name: "Weekly", color: "var(--series-2)" },
-  { key: "monthly" as const, name: "Monthly", color: "var(--series-3)" },
+const LEGEND_ITEMS = [
+  { name: "Simulated Price", color: "var(--series-1)" },
+  { name: "Week Checkpoint", color: "var(--series-2)" },
+  { name: "Month Checkpoint", color: "var(--series-3)" },
 ];
 
 function PriceTooltip({
@@ -37,30 +42,48 @@ function PriceTooltip({
   label,
 }: {
   active?: boolean;
-  payload?: { value: number; name: string; color: string }[];
+  payload?: { payload: ChartRow }[];
   label?: number;
 }) {
   if (!active || !payload || payload.length === 0) return null;
+  const row = payload[0].payload;
   return (
     <div className="chart-tooltip">
-      <div className="chart-tooltip-label">Period {label}</div>
-      {payload.map((entry) => (
-        <div className="chart-tooltip-value" key={entry.name}>
-          <span className="tooltip-line-key" style={{ background: entry.color }} />
-          {entry.name}: {formatCurrency(entry.value)}
+      <div className="chart-tooltip-label">Day {label}</div>
+      <div className="chart-tooltip-value">
+        <span className="tooltip-line-key" style={{ background: "var(--series-1)" }} />
+        Price: {formatCurrency(row.price)}
+      </div>
+      {row.weekIndex !== null && (
+        <div className="chart-tooltip-value">
+          <span className="tooltip-line-key" style={{ background: "var(--series-2)" }} />
+          Week {row.weekIndex}: realized {formatPercent(row.weeklyReturnPercent as number)}
+          {" · "}target {formatPercent(row.weeklyTargetReturnPercent as number)}
         </div>
-      ))}
+      )}
+      {row.monthIndex !== null && (
+        <div className="chart-tooltip-value">
+          <span className="tooltip-line-key" style={{ background: "var(--series-3)" }} />
+          Month {row.monthIndex}: realized {formatPercent(row.monthlyReturnPercent as number)}
+          {" · "}target {formatPercent(row.monthlyTargetReturnPercent as number)}
+        </div>
+      )}
     </div>
   );
 }
 
-export function CombinedPriceChart({ daily, weekly, monthly }: CombinedPriceChartProps) {
-  const maxLength = Math.max(daily.length, weekly.length, monthly.length);
-  const data: ChartRow[] = Array.from({ length: maxLength }, (_, i) => ({
-    index: i,
-    daily: daily[i]?.price,
-    weekly: weekly[i]?.price,
-    monthly: monthly[i]?.price,
+export function CombinedPriceChart({ steps }: CombinedPriceChartProps) {
+  const data: ChartRow[] = steps.map((s) => ({
+    day: s.day,
+    price: s.price,
+    weeklyMarker: s.weekIndex !== null ? s.price : undefined,
+    monthlyMarker: s.monthIndex !== null ? s.price : undefined,
+    weeklyReturnPercent: s.weeklyReturnPercent,
+    weeklyTargetReturnPercent: s.weeklyTargetReturnPercent,
+    monthlyReturnPercent: s.monthlyReturnPercent,
+    monthlyTargetReturnPercent: s.monthlyTargetReturnPercent,
+    weekIndex: s.weekIndex,
+    monthIndex: s.monthIndex,
   }));
 
   return (
@@ -73,23 +96,25 @@ export function CombinedPriceChart({ daily, weekly, monthly }: CombinedPriceChar
           <div>
             <h3>Simulated NIFTY Price</h3>
             <p className="chart-subtitle">
-              Daily, Weekly, and Monthly price paths plotted by period number (Day 1, Week 1,
-              Month 1, ...) — each line from its own independent simulation run.
+              One combined price path — Daily returns move the price every day, while each week's
+              and month's own Weekly/Monthly target return is spread evenly across that period's
+              days, so all three constraints act continuously on the same trajectory. Checkpoints
+              mark the end of each week/month with its realized vs. target return.
             </p>
           </div>
         </div>
-        <ChartLegend items={SERIES} />
+        <ChartLegend items={LEGEND_ITEMS} />
       </div>
       <ResponsiveContainer width="100%" height={380}>
-        <LineChart data={data} margin={{ top: 8, right: 16, bottom: 24, left: 0 }}>
+        <ComposedChart data={data} margin={{ top: 8, right: 16, bottom: 24, left: 0 }}>
           <CartesianGrid stroke="var(--gridline)" vertical={false} />
           <XAxis
-            dataKey="index"
+            dataKey="day"
             tick={{ fill: "var(--muted)", fontSize: 12 }}
             axisLine={{ stroke: "var(--baseline)" }}
             tickLine={false}
             label={{
-              value: "Period Number (Day / Week / Month)",
+              value: "Simulated Day",
               position: "bottom",
               offset: 8,
               fill: "var(--muted)",
@@ -113,25 +138,23 @@ export function CombinedPriceChart({ daily, weekly, monthly }: CombinedPriceChar
             }}
           />
           <Tooltip content={<PriceTooltip />} />
-          {SERIES.map((s) => (
-            <Line
-              key={s.key}
-              type="monotone"
-              dataKey={s.key}
-              name={s.name}
-              stroke={s.color}
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--surface-1)" }}
-              isAnimationActive={false}
-              connectNulls
-            />
-          ))}
-        </LineChart>
+          <Line
+            type="monotone"
+            dataKey="price"
+            name="Simulated Price"
+            stroke="var(--series-1)"
+            strokeWidth={2}
+            dot={false}
+            activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--surface-1)" }}
+            isAnimationActive={false}
+          />
+          <Scatter dataKey="weeklyMarker" name="Weekly Adjustment" fill="var(--series-2)" />
+          <Scatter dataKey="monthlyMarker" name="Monthly Adjustment" fill="var(--series-3)" />
+        </ComposedChart>
       </ResponsiveContainer>
       <p className="chart-footnote">
-        Simulated paths — not a market forecast. Each line ends where its own simulation run
-        ends.
+        Simulated path — not a market forecast. Markers show week/month checkpoints; hover for
+        that period's realized vs. target return.
       </p>
     </div>
   );

@@ -8,58 +8,41 @@ import {
   Tooltip,
 } from "recharts";
 import { buildHistogram } from "../simulation/returnDistribution";
-import { ChartLegend } from "./ChartLegend";
 import { ActivityIcon } from "./icons";
 
 interface CombinedReturnDistributionChartProps {
   dailyReturns: number[];
-  weeklyReturns: number[];
-  monthlyReturns: number[];
 }
 
 interface ChartRow {
   midpoint: number;
   rangeLabel: string;
-  daily: number;
-  weekly: number;
-  monthly: number;
+  count: number;
 }
-
-const SERIES = [
-  { key: "daily" as const, name: "Daily", color: "var(--series-1)" },
-  { key: "weekly" as const, name: "Weekly", color: "var(--series-2)" },
-  { key: "monthly" as const, name: "Monthly", color: "var(--series-3)" },
-];
 
 function DistributionTooltip({
   active,
   payload,
 }: {
   active?: boolean;
-  payload?: { value: number; name: string; color: string; payload: ChartRow }[];
+  payload?: { value: number; payload: ChartRow }[];
 }) {
   if (!active || !payload || payload.length === 0) return null;
   return (
     <div className="chart-tooltip">
       <div className="chart-tooltip-label">{payload[0].payload.rangeLabel}</div>
-      {payload.map((entry) => (
-        <div className="chart-tooltip-value" key={entry.name}>
-          <span className="tooltip-line-key" style={{ background: entry.color }} />
-          {entry.name}: {entry.value}
-        </div>
-      ))}
+      <div className="chart-tooltip-value">
+        <span className="tooltip-line-key" style={{ background: "var(--series-1)" }} />
+        Frequency: {payload[0].value}
+      </div>
     </div>
   );
 }
 
 export function CombinedReturnDistributionChart({
   dailyReturns,
-  weeklyReturns,
-  monthlyReturns,
 }: CombinedReturnDistributionChartProps) {
-  const allReturns = [...dailyReturns, ...weeklyReturns, ...monthlyReturns];
-
-  if (allReturns.length === 0) {
+  if (dailyReturns.length === 0) {
     return (
       <div className="chart-card">
         <p className="empty-state-text">Not enough simulated data for a return distribution.</p>
@@ -67,21 +50,11 @@ export function CombinedReturnDistributionChart({
     );
   }
 
-  const min = Math.min(...allReturns);
-  const max = Math.max(...allReturns);
-  const sharedRange: [number, number] = [min, max];
-
-  const dailyBuckets = buildHistogram(dailyReturns, 22, sharedRange);
-  const weeklyBuckets = buildHistogram(weeklyReturns, 22, sharedRange);
-  const monthlyBuckets = buildHistogram(monthlyReturns, 22, sharedRange);
-  const reference = dailyBuckets.length ? dailyBuckets : weeklyBuckets.length ? weeklyBuckets : monthlyBuckets;
-
-  const data: ChartRow[] = reference.map((bucket, i) => ({
+  const buckets = buildHistogram(dailyReturns, 22);
+  const data: ChartRow[] = buckets.map((bucket) => ({
     midpoint: bucket.midpoint,
     rangeLabel: `${bucket.rangeStart.toFixed(2)}% to ${bucket.rangeEnd.toFixed(2)}%`,
-    daily: dailyBuckets[i]?.count ?? 0,
-    weekly: weeklyBuckets[i]?.count ?? 0,
-    monthly: monthlyBuckets[i]?.count ?? 0,
+    count: bucket.count,
   }));
 
   return (
@@ -94,12 +67,12 @@ export function CombinedReturnDistributionChart({
           <div>
             <h3>Return Distribution</h3>
             <p className="chart-subtitle">
-              Daily, Weekly, and Monthly return distributions on a shared return-% axis — each
-              series from its own independent simulation run.
+              Distribution of the combined path's day-over-day returns (%) — the same simulation
+              run shown in the price chart above. Each day's return already includes that day's
+              share of any active Weekly/Monthly constraint, not just the Daily component.
             </p>
           </div>
         </div>
-        <ChartLegend items={SERIES} />
       </div>
       <ResponsiveContainer width="100%" height={320}>
         <BarChart data={data} margin={{ top: 8, right: 16, bottom: 24, left: 0 }}>
@@ -133,21 +106,11 @@ export function CombinedReturnDistributionChart({
             }}
           />
           <Tooltip content={<DistributionTooltip />} />
-          {SERIES.map((s) => (
-            <Bar
-              key={s.key}
-              dataKey={s.key}
-              name={s.name}
-              fill={s.color}
-              fillOpacity={0.55}
-              isAnimationActive={false}
-            />
-          ))}
+          <Bar dataKey="count" name="Frequency" fill="var(--series-1)" fillOpacity={0.65} isAnimationActive={false} />
         </BarChart>
       </ResponsiveContainer>
       <p className="chart-footnote">
-        Overlaid empirical distributions, binned on the same return-% buckets so Daily, Weekly,
-        and Monthly spreads can be compared directly.
+        Empirical distribution of the combined path's daily returns — not a theoretical curve.
       </p>
     </div>
   );
