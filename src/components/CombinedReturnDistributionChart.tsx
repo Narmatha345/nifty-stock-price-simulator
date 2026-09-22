@@ -130,14 +130,14 @@ export function CombinedReturnDistributionChart({
             <XAxis
               dataKey="midpoint"
               type="category"
-              interval={Math.max(0, Math.ceil(data.length / 6) - 1)}
+              interval={Math.max(0, Math.ceil(data.length / 4) - 1)}
               padding={{ left: 0, right: 0 }}
-              tickFormatter={(v: number) => v.toLocaleString("en-IN")}
+              tickFormatter={(v: number) => Math.round(v).toLocaleString("en-IN")}
               tick={{ fill: "var(--muted)", fontSize: 12 }}
               axisLine={{ stroke: "var(--baseline)" }}
               tickLine={false}
               label={{
-                value: "Ending NIFTY Price (₹) — losses on the left, gains on the right",
+                value: "Ending NIFTY Price (₹)",
                 position: "bottom",
                 offset: 8,
                 fill: "var(--muted)",
@@ -170,7 +170,8 @@ export function CombinedReturnDistributionChart({
           </BarChart>
         </ResponsiveContainer>
         <p className="chart-footnote">
-          Exact distribution across every simulated path's final price — not a theoretical curve.
+          Losses on the left, gains on the right. Exact distribution across every simulated
+          path's final price — not a theoretical curve.
         </p>
       </div>
     );
@@ -239,7 +240,7 @@ export function CombinedReturnDistributionChart({
             axisLine={{ stroke: "var(--baseline)" }}
             tickLine={false}
             label={{
-              value: "Daily Price Change (%) — losses on the left, gains on the right",
+              value: "Daily Price Change (%)",
               position: "bottom",
               offset: 8,
               fill: "var(--muted)",
@@ -272,7 +273,8 @@ export function CombinedReturnDistributionChart({
         </BarChart>
       </ResponsiveContainer>
       <p className="chart-footnote">
-        Based on the same combined simulation shown in the price chart above.
+        Losses on the left, gains on the right. Based on the same combined simulation shown in
+        the price chart above.
       </p>
     </div>
   );
